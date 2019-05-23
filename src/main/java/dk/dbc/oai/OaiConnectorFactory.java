@@ -46,7 +46,7 @@ import javax.ws.rs.client.Client;
 public class OaiConnectorFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(OaiConnectorFactory.class);
 
-    public static OaiConnector create(String baseUrl) {
+    public static OaiConnector create(String baseUrl) throws OaiConnectorException {
         final Client client = HttpClient.newClient();
         LOGGER.info("Creating OaiConnector for: {}", baseUrl);
         return new OaiConnector(client, baseUrl);
@@ -59,7 +59,7 @@ public class OaiConnectorFactory {
     OaiConnector oaiConnector;
 
     @PostConstruct
-    public void initializeConnector() {
+    public void initializeConnector() throws OaiConnectorException {
         oaiConnector = OaiConnectorFactory.create(baseUrl);
     }
 
