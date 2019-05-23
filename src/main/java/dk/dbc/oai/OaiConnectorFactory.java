@@ -39,9 +39,7 @@ import javax.ws.rs.client.Client;
  * <p>
  * The CDI case depends on the OAI service base-url being defined as
  * the value of either a system property or environment variable
- * named OAI_SERVICE_URL. OAI_CONNECTOR_TIMINGS_LOG_LEVEL
- * should be one of TRACE, DEBUG, INFO(default), WARN or ERROR for
- * specifying the log level of runtime timings.
+ * named OAI_SERVICE_URL.
  * </p>
  */
 @ApplicationScoped
