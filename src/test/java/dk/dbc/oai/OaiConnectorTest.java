@@ -11,6 +11,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openarchives.oai.Identify;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -154,6 +157,19 @@ public class OaiConnectorTest {
 
         final Identify identify = oaiConnector.identify();
         assertThat(identify.getBaseURL(), is("http://memory.loc.gov/cgi-bin/oai"));
+    }
+
+    @Test
+    public void getServerCurrentTime() throws OaiConnectorException {
+        wireMockServer.stubFor(get(urlEqualTo("/?verb=Identify"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody(IDENTIFY_RESPONSE)
+            ));
+
+        final ZonedDateTime serverCurrentTime = oaiConnector.getServerCurrentTime();
+        assertThat(serverCurrentTime,
+                is(ZonedDateTime.of(2002, 02, 8, 12, 0, 1, 0, ZoneId.of("UTC"))));
     }
 
     private OaiConnector createOaiConnector() {

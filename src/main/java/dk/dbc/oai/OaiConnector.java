@@ -20,6 +20,8 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.StringReader;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,6 +84,15 @@ public class OaiConnector {
         final Params params = new Params().withVerb(Params.Verb.Identify);
         final OAIPMH oaipmh = executeRequest(params);
         return oaipmh.getIdentify();
+    }
+
+    public ZonedDateTime getServerCurrentTime() throws OaiConnectorException {
+        final Params params = new Params().withVerb(Params.Verb.Identify);
+        final OAIPMH oaipmh = executeRequest(params);
+        return oaipmh.getResponseDate()
+                .toGregorianCalendar()
+                .toZonedDateTime()
+                .withZoneSameLocal(ZoneId.of("UTC"));
     }
 
     private OAIPMH executeRequest(Params params) throws OaiConnectorException {
