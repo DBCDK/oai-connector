@@ -187,6 +187,22 @@ public class OaiConnectorTest {
     }
 
     @Test
+    public void unexpectedStatusCode() throws OaiConnectorException {
+        wireMockServer.stubFor(get(urlEqualTo("/?verb=Identify"))
+            .willReturn(aResponse()
+                .withStatus(201)
+                .withBody(IDENTIFY_RESPONSE)
+            ));
+
+        try {
+            oaiConnector.identify();
+            fail("No OaiConnectorUnexpectedStatusCodeException thrown");
+        } catch (OaiConnectorUnexpectedStatusCodeException e) {
+            assertThat(e.getStatusCode(), is(201));
+        }
+    }
+
+    @Test
     public void identify() throws OaiConnectorException {
         wireMockServer.stubFor(get(urlEqualTo("/?verb=Identify"))
             .willReturn(aResponse()
