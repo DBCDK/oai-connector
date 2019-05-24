@@ -35,7 +35,7 @@ import java.util.List;
 })
 public class ListRecords {
 
-    @XmlElement(required = true)
+    @XmlElement(name="record", required = true)
     protected List<Record> records;
     protected ResumptionToken resumptionToken;
 

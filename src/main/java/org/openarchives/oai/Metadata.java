@@ -1,9 +1,18 @@
 package org.openarchives.oai;
 
+import org.w3c.dom.Element;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -62,4 +71,28 @@ public class Metadata {
         this.any = value;
     }
 
+    public byte[] getBytes() {
+        if (any == null) {
+            return null;
+        }
+        return getBytes(TransformerFactory.newInstance());
+    }
+
+    public byte[] getBytes(TransformerFactory transformerFactory) {
+        if (any == null) {
+            return null;
+        }
+        final Element anyElement = (Element) any;
+        try {
+            final StringWriter stringWriter = new StringWriter();
+            final Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.transform(new DOMSource(anyElement), new StreamResult(stringWriter));
+            return stringWriter.toString().getBytes(StandardCharsets.UTF_8);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Unable to extract metadata payload", ex);
+        }
+    }
 }

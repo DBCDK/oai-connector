@@ -10,7 +10,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openarchives.oai.Identify;
+import org.openarchives.oai.ListRecords;
 
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
@@ -102,6 +104,40 @@ public class OaiConnectorTest {
             " </Identify>\n" +
             "</OAI-PMH>";
 
+    private static final String LIST_RECORDS_RESPONSE =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<OAI-PMH xmlns=\"http://www.openarchives.org/OAI/2.0/\" \n" +
+            "         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+            "         xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/\n" +
+            "         http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd\">\n" +
+            " <responseDate>2002-06-01T19:20:30Z</responseDate> \n" +
+            " <request verb=\"ListRecords\" from=\"2002-02-08T11:00:01Z\"/>\n" +
+            " <ListRecords>\n" +
+            "  <record>\n" +
+            "    <header>\n" +
+            "      <identifier>one</identifier>\n" +
+            "    </header>\n" +
+            "    <metadata>\n" +
+            "      <anyThing>1</anyThing>\n" +
+            "    </metadata>\n" +
+            "  </record>\n" +
+            "  <record>\n" +
+            "    <header status=\"deleted\">\n" +
+            "      <identifier>two</identifier>\n" +
+            "    </header>\n" +
+            "  </record>\n" +
+            "  <record>\n" +
+            "    <header>\n" +
+            "      <identifier>three</identifier>\n" +
+            "    </header>\n" +
+            "    <metadata>\n" +
+            "      <test:anyThing xmlns:test=\"uri:test\">3</test:anyThing>\n" +
+            "    </metadata>\n" +
+            "  </record>\n" +
+            "  <resumptionToken completeListSize=\"3201\" cursor=\"0\">XYZ</resumptionToken>\n" +
+            " </ListRecords>\n" +
+            "</OAI-PMH>";
+
     private static final String ERROR_RESPONSE =
             "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
             "<oai:OAI-PMH xmlns:oai=\"http://www.openarchives.org/OAI/2.0/\" " +
@@ -112,6 +148,9 @@ public class OaiConnectorTest {
             "  <oai:request>http://memory.loc.gov/cgi-bin/oai</oai:request>\n" +
             "  <oai:error code=\"badVerb\">Illegal OAI verb</oai:error>\n" +
             "</oai:OAI-PMH>";
+
+    private static final ZonedDateTime LOCAL_TIME =
+            ZonedDateTime.of(2002, 02, 8, 12, 0, 1, 0, ZoneId.of("Europe/Copenhagen"));
 
     private final OaiConnector oaiConnector = createOaiConnector();
 
@@ -160,6 +199,26 @@ public class OaiConnectorTest {
     }
 
     @Test
+    public void listRecords() throws OaiConnectorException {
+        wireMockServer.stubFor(get(urlEqualTo("/?verb=ListRecords"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(LIST_RECORDS_RESPONSE)
+                ));
+
+        final OaiConnector.Params params = new OaiConnector.Params();
+        final ListRecords listRecords = oaiConnector.listRecords(params);
+
+        assertThat("resumption token",
+                listRecords.getResumptionToken().getValue(), is("XYZ"));
+        assertThat("number of records",
+                listRecords.getRecords().size(), is(3));
+        assertThat("3rd record",
+                new String(listRecords.getRecords().get(2).getMetadata().getBytes(), StandardCharsets.UTF_8),
+                is("<test:anyThing xmlns=\"http://www.openarchives.org/OAI/2.0/\" xmlns:test=\"uri:test\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">3</test:anyThing>"));
+    }
+
+    @Test
     public void getServerCurrentTime() throws OaiConnectorException {
         wireMockServer.stubFor(get(urlEqualTo("/?verb=Identify"))
             .willReturn(aResponse()
@@ -170,6 +229,18 @@ public class OaiConnectorTest {
         final ZonedDateTime serverCurrentTime = oaiConnector.getServerCurrentTime();
         assertThat(serverCurrentTime,
                 is(ZonedDateTime.of(2002, 02, 8, 12, 0, 1, 0, ZoneId.of("UTC"))));
+    }
+
+    @Test
+    public void fromParam() {
+        final OaiConnector.Params params = new OaiConnector.Params().withFrom(LOCAL_TIME);
+        assertThat(params.getFrom().get().toString(), is("2002-02-08T11:00:01Z[UTC]"));
+    }
+
+    @Test
+    public void untilParam() {
+        final OaiConnector.Params params = new OaiConnector.Params().withUntil(LOCAL_TIME);
+        assertThat(params.getUntil().get().toString(), is("2002-02-08T11:00:01Z[UTC]"));
     }
 
     private OaiConnector createOaiConnector() {

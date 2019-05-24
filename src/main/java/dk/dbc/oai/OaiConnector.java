@@ -10,6 +10,7 @@ import dk.dbc.httpclient.HttpGet;
 import dk.dbc.invariant.InvariantUtil;
 import net.jodah.failsafe.RetryPolicy;
 import org.openarchives.oai.Identify;
+import org.openarchives.oai.ListRecords;
 import org.openarchives.oai.OAIPMH;
 
 import javax.ws.rs.ProcessingException;
@@ -80,10 +81,18 @@ public class OaiConnector {
         failSafeHttpClient.getClient().close();
     }
 
+    /* http://www.openarchives.org/OAI/openarchivesprotocol.html#Identify */
     public Identify identify() throws OaiConnectorException {
         final Params params = new Params().withVerb(Params.Verb.Identify);
         final OAIPMH oaipmh = executeRequest(params);
         return oaipmh.getIdentify();
+    }
+
+    /* http://www.openarchives.org/OAI/openarchivesprotocol.html#ListRecords */
+    public ListRecords listRecords(Params params) throws OaiConnectorException {
+        params.withVerb(Params.Verb.ListRecords);
+        final OAIPMH oaipmh = executeRequest(params);
+        return oaipmh.getListRecords();
     }
 
     public ZonedDateTime getServerCurrentTime() throws OaiConnectorException {
@@ -147,6 +156,26 @@ public class OaiConnector {
     public static class Params extends HashMap<String, Object> {
         public enum Key {
             /**
+             * UTC datetime value, which specifies a lower bound for datestamp-based selective harvesting
+             */
+            FROM("from"),
+            /**
+             * the format that should be included in the metadata part of the returned records
+             */
+            METADATA_PREFIX("metadataPrefix"),
+            /**
+             * flow control token returned by a previous request that issued an incomplete list
+             */
+            RESUMPTION_TOKEN("resumptionToken"),
+            /**
+             * setSpec value specifying set criteria for selective harvesting
+             */
+            SET("set"),
+            /**
+             * UTC datetime value, which specifies a upper bound for datestamp-based selective harvesting
+             */
+            UNTIL("until"),
+            /**
              * Verb identifying one of the supported OAI-PMH request types
              */
             VERB("verb");
@@ -162,7 +191,55 @@ public class OaiConnector {
         }
 
         public enum Verb {
-            Identify
+            Identify, ListRecords
+        }
+
+        /* the given datetime will be converted to UTC internally */
+        public Params withFrom(ZonedDateTime zonedDateTime) {
+            if (zonedDateTime != null) {
+                final ZonedDateTime utc =
+                        zonedDateTime.withZoneSameInstant(ZoneId.of("UTC"));
+                putOrRemoveOnNull(Key.FROM, DateTimeFormatter.UTC_DATE_TIME.format(utc));
+            }
+            return this;
+        }
+
+        /* the from time will always be returned in UTC */
+        public Optional<ZonedDateTime> getFrom() {
+            final String utcDateTimeString =
+                    (String) this.get(Key.FROM);
+            if (utcDateTimeString == null || utcDateTimeString.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(ZonedDateTime.parse(
+                    utcDateTimeString, DateTimeFormatter.UTC_DATE_TIME.withZone(ZoneId.of("UTC"))));
+        }
+
+        public Params withMetadataPrefix(String metadataPrefix) {
+            putOrRemoveOnNull(Key.METADATA_PREFIX, metadataPrefix);
+            return this;
+        }
+
+        public Optional<String> getMetadataPrefix() {
+            return Optional.ofNullable((String) this.get(Key.METADATA_PREFIX));
+        }
+
+        public Params withResumptionToken(String token) {
+            putOrRemoveOnNull(Key.RESUMPTION_TOKEN, token);
+            return this;
+        }
+
+        public Optional<String> getResumptionToken() {
+            return Optional.ofNullable((String) this.get(Key.RESUMPTION_TOKEN));
+        }
+
+        public Params withSet(String setSpec) {
+            putOrRemoveOnNull(Key.SET, setSpec);
+            return this;
+        }
+
+        public Optional<String> getSet() {
+            return Optional.ofNullable((String) this.get(Key.SET));
         }
 
         public Params withVerb(Verb verb) {
@@ -172,6 +249,27 @@ public class OaiConnector {
 
         public Optional<Verb> getVerb() {
             return Optional.ofNullable((Verb) this.get(Key.VERB));
+        }
+
+        /* the given datetime will be converted to UTC internally */
+        public Params withUntil(ZonedDateTime zonedDateTime) {
+            if (zonedDateTime != null) {
+                final ZonedDateTime utc =
+                        zonedDateTime.withZoneSameInstant(ZoneId.of("UTC"));
+                putOrRemoveOnNull(Key.UNTIL, DateTimeFormatter.UTC_DATE_TIME.format(utc));
+            }
+            return this;
+        }
+
+        /* the from time will always be returned in UTC */
+        public Optional<ZonedDateTime> getUntil() {
+            final String utcDateTimeString =
+                    (String) this.get(Key.UNTIL);
+            if (utcDateTimeString == null || utcDateTimeString.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(ZonedDateTime.parse(
+                    utcDateTimeString, DateTimeFormatter.UTC_DATE_TIME.withZone(ZoneId.of("UTC"))));
         }
 
         private void putOrRemoveOnNull(Key param, Object value) {
