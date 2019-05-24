@@ -14,6 +14,29 @@ Add the dependency to your Maven pom.xml
   <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
+ In your Java code
+
+```java
+import dk.dbc.oai.OaiConnector;
+import javax.inject.Inject;
+...
+
+// Assumes environment variable OAI_SERVICE_URL
+// is set to the base URL of the OAI provider service.
+@Inject OaiConnector oaiConnector;
+
+Identify identify = oaiConnector.identify();
+
+ListRecords listRecords = oaiConnector.listRecords(
+        new OaiConnector.Params()
+                .withSet("mySet")
+                .withFrom(Instant.now().atZone(ZoneId.of("Europe/Copenhagen"))));
+
+for(Record record : listRecords.getRecords()) {
+    record.getMetadata().getBytes();
+}
+```
+
 ### development
 
 **Requirements**
