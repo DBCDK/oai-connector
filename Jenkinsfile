@@ -22,7 +22,7 @@ pipeline {
 		}
 		stage("verify") {
 			steps {
-				sh "mvn verify pmd:pmd javadoc:aggregate"
+				sh "mvn verify pmd:pmd"
 				junit "target/surefire-reports/TEST-*.xml"
 			}
 		}
@@ -30,8 +30,7 @@ pipeline {
 			agent {label workerNode}
 			steps {
 				warnings consoleParsers: [
-					[parserName: "Java Compiler (javac)"],
-					[parserName: "JavaDoc Tool"]
+					[parserName: "Java Compiler (javac)"]
 				],
 					unstableTotalAll: "0",
 					failedTotalAll: "0"
