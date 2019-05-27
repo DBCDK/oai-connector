@@ -22,7 +22,7 @@ pipeline {
 		}
 		stage("verify") {
 			steps {
-				sh "mvn verify pmd:pmd javadoc:aggregate"
+				sh "mvn verify pmd:pmd"
 				junit "target/surefire-reports/TEST-*.xml"
 			}
 		}
