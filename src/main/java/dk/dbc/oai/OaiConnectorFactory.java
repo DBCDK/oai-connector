@@ -59,8 +59,12 @@ public class OaiConnectorFactory {
     OaiConnector oaiConnector;
 
     @PostConstruct
-    public void initializeConnector() throws OaiConnectorException {
-        oaiConnector = OaiConnectorFactory.create(baseUrl);
+    public void initializeConnector() {
+        try {
+            oaiConnector = OaiConnectorFactory.create(baseUrl);
+        } catch (OaiConnectorException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Produces
