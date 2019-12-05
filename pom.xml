@@ -15,25 +15,15 @@
   <groupId>dk.dbc</groupId>
   <name>oai-connector</name>
 
-  <distributionManagement>
-    <repository>
-      <id>mavenrepo.dbc.dk</id>
-      <name>mavenrepo</name>
-      <url>http://mavenrepo.dbc.dk/content/repositories/snapshots</url>
-    </repository>
-  </distributionManagement>
-
-  <repositories>
-    <repository>
-      <id>mavenrepo.dbc.dk</id>
-      <url>http://mavenrepo.dbc.dk/content/groups/public/</url>
-    </repository>
-  </repositories>
+  <parent>
+    <groupId>dk.dbc</groupId>
+    <artifactId>super-pom</artifactId>
+    <version>master-SNAPSHOT</version>
+    <relativePath></relativePath>
+  </parent>
 
   <properties>
-    <jdk.version>1.8</jdk.version>
     <jersey.version>2.29</jersey.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <dependencies>
@@ -89,22 +79,4 @@
       </exclusions>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
-        <configuration>
-          <source>${jdk.version}</source>
-          <target>${jdk.version}</target>
-          <testSource>${jdk.version}</testSource>
-          <testTarget>${jdk.version}</testTarget>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
