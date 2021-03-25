@@ -21,13 +21,12 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.StringReader;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
  /**
  * OaiConnector - OAI-PMH client
@@ -40,14 +39,14 @@ import java.util.concurrent.TimeUnit;
  * </p>
  */
 public class OaiConnector {
-    private static final RetryPolicy RETRY_POLICY = new RetryPolicy()
-            .retryOn(Collections.singletonList(ProcessingException.class))
-            .retryIf((Response response) ->
-                    response.getStatus() == 404
-                            || response.getStatus() == 500
-                            || response.getStatus() == 502)
-            .withDelay(10, TimeUnit.SECONDS)
-            .withMaxRetries(6);
+     private static final RetryPolicy<Response> RETRY_POLICY = new RetryPolicy<Response>()
+             .handle(ProcessingException.class)
+             .handleResultIf(response ->
+                     response.getStatus() == 404
+                     || response.getStatus() == 500
+                     || response.getStatus() == 502)
+             .withDelay(Duration.ofSeconds(10))
+             .withMaxRetries(6);
 
     private final FailSafeHttpClient failSafeHttpClient;
     private final String baseUrl;
